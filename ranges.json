@@ -1,0 +1,592 @@
+[
+    {
+        "name": "BMI",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 18.4999,
+                "category": "Low"
+            },
+            {
+                "min": 18.5,
+                "max": 24.9999,
+                "category": "Normal"
+            },
+            {
+                "min": 25,
+                "max": 29.9999,
+                "category": "Moderate"
+            },
+            {
+                "min": 30,
+                "max": 10000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Pulse",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 49.9999,
+                "category": "Low"
+            },
+            {
+                "min": 50,
+                "max": 99.9999,
+                "category": "Normal"
+            },
+            {
+                "min": 100,
+                "max": 150,
+                "category": "Moderate"
+            },
+            {
+                "min": 150.01,
+                "max": 10000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Systolic",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 99.9999,
+                "category": "Low"
+            },
+            {
+                "min": 100,
+                "max": 130,
+                "category": "Normal"
+            },
+            {
+                "min": 130.01,
+                "max": 140,
+                "category": "Moderate"
+            },
+            {
+                "min": 140.01,
+                "max": 10000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Diastolic",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 60,
+                "category": "Low"
+            },
+            {
+                "min": 61,
+                "max": 80,
+                "category": "Normal"
+            },
+            {
+                "min": 80.01,
+                "max": 90,
+                "category": "Moderate"
+            },
+            {
+                "min": 90.01,
+                "max": 10000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "BloodSugarShortTerm",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 3.9999,
+                "category": "Low"
+            },
+            {
+                "min": 4,
+                "max": 6,
+                "category": "Normal"
+            },
+            {
+                "min": 6.01,
+                "max": 7,
+                "category": "Moderate"
+            },
+            {
+                "min": 7.01,
+                "max": 10000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "BloodSugarLongTerm",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 30.9999,
+                "category": "Low"
+            },
+            {
+                "min": 31,
+                "max": 42,
+                "category": "Normal"
+            },
+            {
+                "min": 42.01,
+                "max": 48,
+                "category": "Moderate"
+            },
+            {
+                "min": 48.01,
+                "max": 10000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Steps",
+        "ranges": [
+            {
+                "min": -10000,
+                "max": 10000000,
+                "category": "Normal"
+            }
+        ]
+    },
+    {
+        "name": "Sleep",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 21599,
+                "category": "Low"
+            },
+            {
+                "min": 21600,
+                "max": 25199,
+                "category": "Moderate"
+            },
+            {
+                "min": 25200,
+                "max": 32400,
+                "category": "Normal"
+            },
+            {
+                "min": 32401,
+                "max": 1000000000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "ASAT",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 0.7599,
+                "category": "Normal"
+            },
+            {
+                "min": 0.76,
+                "max": 9999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "ALAT",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 1.0999,
+                "category": "Normal"
+            },
+            {
+                "min": 1.1,
+                "max": 9999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "EnergyLevel",
+        "ranges": [
+            {
+                "min": 6,
+                "max": 7,
+                "category": "Normal"
+            },
+            {
+                "min": 3,
+                "max": 5.9999,
+                "category": "Moderate"
+            },
+            {
+                "min": 0,
+                "max": 2.9999,
+                "category": "Low"
+            }
+        ]
+    },
+    {
+        "name": "Mood",
+        "ranges": [
+            {
+                "min": 6,
+                "max": 7,
+                "category": "Normal"
+            },
+            {
+                "min": 3,
+                "max": 5.9999,
+                "category": "Moderate"
+            },
+            {
+                "min": 0,
+                "max": 2.9999,
+                "category": "Low"
+            }
+        ]
+    },
+    {
+        "name": "Stress",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 2.9999,
+                "category": "Normal"
+            },
+            {
+                "min": 3,
+                "max": 5.9999,
+                "category": "Moderate"
+            },
+            {
+                "min": 6,
+                "max": 7,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Anxiety",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 2.9999,
+                "category": "Normal"
+            },
+            {
+                "min": 3,
+                "max": 5.9999,
+                "category": "Moderate"
+            },
+            {
+                "min": 6,
+                "max": 7,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Depression",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 2.9999,
+                "category": "Normal"
+            },
+            {
+                "min": 3,
+                "max": 5.9999,
+                "category": "Moderate"
+            },
+            {
+                "min": 6,
+                "max": 7,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Cholesterol",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 5,
+                "category": "Normal"
+            },
+            {
+                "min": 5.01,
+                "max": 6,
+                "category": "Moderate"
+            },
+            {
+                "min": 6.01,
+                "max": 10000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "RespiratoryRate",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 11.9999,
+                "category": "Low"
+            },
+            {
+                "min": 12,
+                "max": 19,
+                "category": "Normal"
+            },
+            {
+                "min": 19.01,
+                "max": 23,
+                "category": "Moderate"
+            },
+            {
+                "min": 23.01,
+                "max": 10000,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "LDLCholesterol",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 1.9999,
+                "category": "Low"
+            },
+            {
+                "min": 2,
+                "max": 5.3099,
+                "category": "Normal"
+            },
+            {
+                "min": 5.31,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "HDLCholesterol",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 0.7999,
+                "category": "Low"
+            },
+            {
+                "min": 0.8,
+                "max": 2.1099,
+                "category": "Normal"
+            },
+            {
+                "min": 2.11,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "THSThyroidStimulatingHormone",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 0.2999,
+                "category": "Low"
+            },
+            {
+                "min": 0.3,
+                "max": 4.2099,
+                "category": "Normal"
+            },
+            {
+                "min": 4.21,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "T3Triiodothyronine",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 3.2999,
+                "category": "Low"
+            },
+            {
+                "min": 3.3,
+                "max": 6,
+                "category": "Normal"
+            },
+            {
+                "min": 6.01,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "T4Thyroxine",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 9.9999,
+                "category": "Low"
+            },
+            {
+                "min": 10,
+                "max": 22,
+                "category": "Normal"
+            },
+            {
+                "min": 22.01,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Estrogen",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 69.9999,
+                "category": "Low"
+            },
+            {
+                "min": 70,
+                "max": 1300,
+                "category": "Normal"
+            },
+            {
+                "min": 1300.01,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Testosterone",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 2.9999,
+                "category": "Low"
+            },
+            {
+                "min": 3,
+                "max": 27,
+                "category": "Normal"
+            },
+            {
+                "min": 27.01,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "NaSodium",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 137,
+                "category": "Low"
+            },
+            {
+                "min": 137,
+                "max": 145,
+                "category": "Normal"
+            },
+            {
+                "min": 145.01,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "KPotassium",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 3.4999,
+                "category": "Low"
+            },
+            {
+                "min": 3.5,
+                "max": 4.6099,
+                "category": "Normal"
+            },
+            {
+                "min": 4.61,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "Creatinine",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 100,
+                "category": "Normal"
+            },
+            {
+                "min": 100.01,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "PSAProstateSpecificAntigen",
+        "ranges": [
+            {
+                "min": 0,
+                "max": 3,
+                "category": "Normal"
+            },
+            {
+                "min": 3.01,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    },
+    {
+        "name": "WaterThrowingBesvVAS",
+        "ranges": [
+            {
+                "min": 1.01,
+                "max": 2,
+                "category": "Moderate"
+            },
+            {
+                "min": 0,
+                "max": 1,
+                "category": "Normal"
+            },
+            {
+                "min": 2.01,
+                "max": 99999,
+                "category": "High"
+            }
+        ]
+    }
+]
