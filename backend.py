@@ -3,7 +3,7 @@
 # consider
 ## uvicorn agent_run:app --log-config logging.conf
 
-from googletrans import Translator
+# from googletrans import Translator
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, List
@@ -31,6 +31,8 @@ from pinecone import Pinecone
 
 from gsheet import GoogleSheetManager
 from evaluation.llm_judge import LLMJudge
+
+from langfuse import Langfuse
 from langfuse.callback import CallbackHandler
 
 load_dotenv()
@@ -38,7 +40,7 @@ load_dotenv()
 # Initialize FastAPI
 app = FastAPI()
 
-translator = Translator()
+# translator = Translator()
 
 # Load API keys
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -49,7 +51,8 @@ LANGFUSE_SECRET_KEY = os.getenv('LANGFUSE_SECRET_KEY')
 LANGFUSE_PUBLIC_KEY = os.getenv('LANGFUSE_PUBLIC_KEY')
 LANGFUSE_HOST = os.getenv('LANGFUSE_HOST')
 
-eval_sheet_manager = GoogleSheetManager("MyMed_Agent_Evaluation", "translated-4o-mini (R3)")
+# eval_sheet_manager = GoogleSheetManager("MyMed_Agent_Evaluation", "translated-4o-mini (R3)")
+eval_sheet_manager = GoogleSheetManager("MyMed_Agent_Evaluation", "testing (R3)")
 
 embedding_model = OpenAIEmbeddings(api_key=OPENAI_API_KEY, model='text-embedding-3-small')
 
@@ -71,6 +74,9 @@ vector_index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 
 # Callback for printing thought process
 callback_manager = CallbackManager([StdOutCallbackHandler()])
+
+# Initialize Langfuse
+langfuse = Langfuse(secret_key=LANGFUSE_SECRET_KEY, public_key=LANGFUSE_PUBLIC_KEY)
 
 langfuse_handler = CallbackHandler(
     public_key=LANGFUSE_PUBLIC_KEY,
@@ -306,7 +312,7 @@ Stress {Stress} nivå
 Depression {Depression} nivå
 Vattenkastning {WaterThrowingBesvVAS} VAS-skala
 """.format(
-    Systolic=110,
+    Systolic=140,
     Diastolic=70,
     Sleep=26000 / 3600,  # Convert from seconds to hours
     BMI=20,
@@ -315,8 +321,8 @@ Vattenkastning {WaterThrowingBesvVAS} VAS-skala
     BloodSugarLongTerm=35,
     Steps=11000,
     Cholesterol=3,
-    LDLCholesterol=3,
-    HDLCholesterol=1,
+    LDLCholesterol=8,
+    HDLCholesterol=8,
     THSThyroidStimulatingHormone=2,
     T3Triiodothyronine=5,
     T4Thyroxine=15,
@@ -351,7 +357,9 @@ async def query_agent(query: QueryRequest):
 
         final_query = query.question
 
-        response = agent_executor.invoke({"input":  USER_PARAM + "\n" + final_query}, config={"callbacks": [langfuse_handler]})
+        response = agent_executor.invoke({"input":  final_query}, config={"callbacks": [langfuse_handler]})
+
+        # response = agent_executor.invoke({"input":  USER_PARAM + "\n" + final_query}, config={"callbacks": [langfuse_handler]})
 
         # translated_result_response = await translator.translate(response.get("output"), src="sv", dest="en")
         # translated_response = translated_result_response.text
@@ -442,6 +450,29 @@ async def query_agent(query: QueryRequest):
             status_code=500,
             detail=f"Error processing query: {str(e)}"
         )
+
+# Data model for feedback submission
+class FeedbackRequest(BaseModel):
+    query: str
+    response: str
+    feedback_score: int  # 1-5 rating
+    trace_id: str  # Unique Trace ID
+
+@app.post("/feedback/")
+async def submit_feedback(feedback: FeedbackRequest):
+    """Attach user feedback to Langfuse trace and store it in Google Sheets."""
+    try:
+        # Attach feedback to the existing trace in Langfuse
+        langfuse.add_trace_feedback(
+            trace_id=feedback.trace_id,
+            score=feedback.feedback_score,
+            comment=f"User rated {feedback.feedback_score}/5"
+        )
+
+        return {"message": "Feedback received successfully!"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error storing feedback: {str(e)}")
     
 # # Start FastAPI server
 if __name__ == "__main__":

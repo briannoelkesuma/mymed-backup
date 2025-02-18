@@ -47,7 +47,10 @@ class GoogleSheetManager:
             logger.error(f"Google Sheet '{self.sheet_name}' not found! Ensure the service account has access.")
             raise
         except gspread.WorksheetNotFound:
-            logger.error(f"Worksheet '{self.worksheet_name}' not found in '{self.sheet_name}'! Check if the tab exists.")
+            logger.info(f"Worksheet '{self.worksheet_name}' not found. Creating a new worksheet.")
+            worksheet = spreadsheet.add_worksheet(title=self.worksheet_name, rows='100', cols='20')
+            logger.info(f"Connected to Google Sheet: '{self.sheet_name}', Worksheet: '{self.worksheet_name}', Refresh to add")
+            # logger.error(f"Worksheet '{self.worksheet_name}' not found in '{self.sheet_name}'! Check if the tab exists.")
             raise
         except Exception as e:
             logger.error(f"Failed to open Google Sheet: {e}")
