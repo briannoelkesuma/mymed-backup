@@ -19,7 +19,7 @@ from langchain_core.callbacks.manager import StdOutCallbackHandler, CallbackMana
 from langchain.memory import ConversationBufferMemory
 from langchain.agents import AgentExecutor, create_react_agent, Tool
 
-# from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.pinecone import PineconeVectorStore
@@ -57,7 +57,7 @@ eval_sheet_manager = GoogleSheetManager("MyMed_Agent_Evaluation", "testing (R3)"
 embedding_model = OpenAIEmbeddings(api_key=OPENAI_API_KEY, model='text-embedding-3-small')
 
 llm = ChatOpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY)  # Assuming gpt-4o-mini model in use
-# llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", api_key=GEMINI_API_KEY)
+# llm = ChatGoogleGenerativeAI(model="gemini-2.0-pro-exp", api_key=GEMINI_API_KEY)
 
 # Set up Pinecone
 pc = Pinecone(api_key=PINECONE_API_KEY)
@@ -129,9 +129,43 @@ def retrieve_from_vectorstore(query_text: str):
 with open('/Users/briannoel/Desktop/mymed-combined/data/ranges.json') as f:
     limits_json = json.load(f)
 
-# 2. health data and its categories
+USER_PARAM = {
+    "Weight": 70,
+    "BMI": 20,
+    "Pulse": 60,
+    "Systolic": 150,
+    "Diastolic": 70,
+    "BloodSugarShortTerm": 3,
+    "BloodSugarLongTerm": 35,
+    "Steps": 11000,
+    "Sleep": 26000,
+    "ASAT": 0.5,
+    "ALAT": 0.5,
+    "EnergyLevel": 6.5,
+    "Mood": 6.5,
+    "Stress": 6,
+    "Anxiety": 1,
+    "Depression": 1,
+    "Cholesterol": 3,
+    "RespiratoryRate": 13,
+    "LDLCholesterol": 3,
+    "HDLCholesterol": 1,
+    "THSThyroidStimulatingHormone": 2,
+    "T3Triiodothyronine": 5,
+    "T4Thyroxine": 15,
+    "Estrogen": 80,
+    "Testosterone": 10,
+    "NaSodium": 140,
+    "KPotassium": 4,
+    "Creatinine": 50,
+    "PSAProstateSpecificAntigen": 1,
+    "WaterThrowingBesvVAS": 0.5
+}
+
+# health data and its categories
 def evaluate_health_status(health_values, limits_data):
     evaluated_health = []
+    abnormal_params = []
 
     for param in limits_data:
         param_name = param["name"]
@@ -143,28 +177,23 @@ def evaluate_health_status(health_values, limits_data):
                     evaluated_health.append({
                         "parameter": param_name,
                         "value": user_value,
-                        "status": range_def["description"]
+                        "status": range_def["category"]
                     })
-                    break  # Stop checking further ranges once matched
+                    if range_def["category"] != "Normal":
+                        abnormal_params.append(param_name)
+                    break 
 
-    return evaluated_health
+    return evaluated_health, abnormal_params
 
 # Function to evaluate user health data
 def retrieve_health_status(user_health_data):
-    evaluated_health_status = evaluate_health_status(user_health_data, limits_json)
+    evaluated_health_status, _ = evaluate_health_status(user_health_data, limits_json)
     return json.dumps(evaluated_health_status, indent=2)
 
 retrieval_tool = Tool(
     name="pinecone_retriever",
     func=lambda query_text: retrieve_from_vectorstore(query_text),
     description="Retrieves relevant documents from the Pinecone vector store"
-)
-
-# Create a Tool for retrieving health status
-health_status_tool = Tool(
-    name="health_status_evaluator",
-    func=lambda user_data: retrieve_health_status(user_data),
-    description="Evaluates user health parameters against predefined limits and categorizes them as Low, Normal, Moderate, or High."
 )
 
 tools = [retrieval_tool]
@@ -194,76 +223,13 @@ template = '''
     - If any tool returns a response starting with 'Final Answer:', **stop immediately** and use that as the response.
         - Do not proceed with further tool usage or reasoning.
 
-    Final Answer: the final answer to the original input question crafted like a storyline with steps if necessary. Include sources and links from the context ONLY.
+    Final Answer: the final answer to the original input question crafted like a storyline with steps if necessary. Include ALL sources and links from the context ONLY.
 
     Begin!
 
     Question: {input}
     Thought: {agent_scratchpad}
 '''
-
-# user_health_data = {
-#     "Datum": "2/1/2025 5:00",
-#     "Weight": 70,
-#     "BMI": 20,
-#     "Pulse": 60,
-#     "Systolic": 110,
-#     "Diastolic": 70,
-#     "BloodSugarShortTerm": 3,
-#     "BloodSugarLongTerm": 35,
-#     "Steps": 11000,
-#     "Sleep": 26000,
-#     "ASAT": 0.5,
-#     "ALAT": 0.5,
-#     "EnergyLevel": 6.5,
-#     "Mood": 6.5,
-#     "Stress": 1,
-#     "Anxiety": 1,
-#     "Depression": 1,
-#     "Cholesterol": 3,
-#     "RespiratoryRate": 13,
-#     "LDLCholesterol": 3,
-#     "HDLCholesterol": 1,
-#     "THSThyroidStimulatingHormone": 2,
-#     "T3Triiodothyronine": 5,
-#     "T4Thyroxine": 15,
-#     "Estrogen": 80,
-#     "Testosterone": 10,
-#     "NaSodium": 140,
-#     "KPotassium": 4,
-#     "Creatinine": 50,
-#     "PSAProstateSpecificAntigen": 1,
-#     "WaterThrowingBesvVAS": 0.5
-# }
-
-# template = '''
-
-#     Answer the following questions strictly using the given tools.
-
-#     {tools}
-
-#     Chat history:
-#     {chat_history}
-
-#     Use the following format:
-
-#     Question: the input question you must answer
-#     Thought: reason about the question and decide if it is relevant
-#     Action: the action to take, should be one of [{tool_names}]
-#     Action Input: the input to the action
-#     Observation: the result of the action
-#     Thought:
-#     - Use the **retrieval_tool** tool to retrieve information and context within your knowledge base.
-#     - If any tool returns a response starting with 'Final Answer:', **stop immediately** and use that as the response.
-#         - Do not proceed with further tool usage or reasoning.
-
-#     Final Answer: the final answer to the original input question crafted like a storyline with steps if necessary.
-
-#     Begin!
-
-#     Question: {input}
-#     Thought: {agent_scratchpad}
-# '''
 
 prompt = PromptTemplate.from_template(template)
 
@@ -280,82 +246,36 @@ agent_executor = AgentExecutor(agent=agent, tools=tools, callback_manager=callba
 class QueryRequest(BaseModel):
     question: str
 
-USER_PARAM = """
-This is my health data that you should take into account when answering my questions:
-
-Blodtryck {Systolic}/{Diastolic} mmHg
-Sömn {Sleep} timmar
-BMI {BMI}
-Puls {Pulse} bpm
-B-glukos {BloodSugarShortTerm} mmol/L
-HbA1c {BloodSugarLongTerm} mmol/mol
-Steg {Steps}/d
-Kolesterol {Cholesterol} mmol/L
-LDL {LDLCholesterol} mmol/L
-HDL {HDLCholesterol} mmol/L
-TSH {THSThyroidStimulatingHormone} mIE/L
-T3 {T3Triiodothyronine} pmol/L
-T4 {T4Thyroxine} pmol/L
-ASAT {ASAT} µkat/L
-ALAT {ALAT} µkat/L
-Kreatinin {Creatinine} µmol/L
-PSA {PSAProstateSpecificAntigen} µg/L
-Na {NaSodium} mmol/L
-K {KPotassium} mmol/L
-Testosteron {Testosterone} nmol/L
-Östrogen {Estrogen} pmol/L
-Andningsfrekvens {RespiratoryRate} andetag/min
-Energilevel {EnergyLevel}/10
-Humör {Mood}/10
-Stress {Stress} nivå
-Ångest {Anxiety} nivå
-Depression {Depression} nivå
-Vattenkastning {WaterThrowingBesvVAS} VAS-skala
-""".format(
-    Systolic=140,
-    Diastolic=70,
-    Sleep=26000 / 3600,  # Convert from seconds to hours
-    BMI=20,
-    Pulse=60,
-    BloodSugarShortTerm=3,
-    BloodSugarLongTerm=35,
-    Steps=11000,
-    Cholesterol=3,
-    LDLCholesterol=8,
-    HDLCholesterol=8,
-    THSThyroidStimulatingHormone=2,
-    T3Triiodothyronine=5,
-    T4Thyroxine=15,
-    ASAT=0.5,
-    ALAT=0.5,
-    Creatinine=50,
-    PSAProstateSpecificAntigen=1,
-    NaSodium=140,
-    KPotassium=4,
-    Testosterone=10,
-    Estrogen=80,
-    RespiratoryRate=13,
-    EnergyLevel=6.5,
-    Mood=6.5,
-    Stress=1,
-    Anxiety=1,
-    Depression=1,
-    WaterThrowingBesvVAS=0.5
-)
-
 # API Endpoint for querying the ReAct Agent
 @app.post("/query/")
 async def query_agent(query: QueryRequest):
     global current_query_id
     current_query_id = str(uuid.uuid4())
     try:
+
+        final_query = query.question
+
+        user_health_context = retrieve_health_status(USER_PARAM)
+
+        # Combine user health data with the query
+        final_query = f"""
+        User's Health Data:
+        {user_health_context}
+
+        User's Query:
+        {query.question}
+        """
+
+        print(f"Final Query:\n{final_query}")
+
+
         # Pass the input query to the agent executor
         # translated_result = await translator.translate(query.question, src="en", dest="sv")
         # translated_query = translated_result.text
 
         # final_query = translated_query if translated_query != query.question else query.question
 
-        final_query = query.question
+        # final_query = query.question
 
         response = agent_executor.invoke({"input":  final_query}, config={"callbacks": [langfuse_handler]})
 
@@ -451,28 +371,28 @@ async def query_agent(query: QueryRequest):
             detail=f"Error processing query: {str(e)}"
         )
 
-# Data model for feedback submission
-class FeedbackRequest(BaseModel):
-    query: str
-    response: str
-    feedback_score: int  # 1-5 rating
-    trace_id: str  # Unique Trace ID
+# # Data model for feedback submission
+# class FeedbackRequest(BaseModel):
+#     query: str
+#     response: str
+#     feedback_score: int  # 1-5 rating
+#     trace_id: str  # Unique Trace ID
 
-@app.post("/feedback/")
-async def submit_feedback(feedback: FeedbackRequest):
-    """Attach user feedback to Langfuse trace and store it in Google Sheets."""
-    try:
-        # Attach feedback to the existing trace in Langfuse
-        langfuse.add_trace_feedback(
-            trace_id=feedback.trace_id,
-            score=feedback.feedback_score,
-            comment=f"User rated {feedback.feedback_score}/5"
-        )
+# @app.post("/feedback/")
+# async def submit_feedback(feedback: FeedbackRequest):
+#     """Attach user feedback to Langfuse trace and store it in Google Sheets."""
+#     try:
+#         # Attach feedback to the existing trace in Langfuse
+#         langfuse.add_trace_feedback(
+#             trace_id=feedback.trace_id,
+#             score=feedback.feedback_score,
+#             comment=f"User rated {feedback.feedback_score}/5"
+#         )
 
-        return {"message": "Feedback received successfully!"}
+#         return {"message": "Feedback received successfully!"}
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error storing feedback: {str(e)}")
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error storing feedback: {str(e)}")
     
 # # Start FastAPI server
 if __name__ == "__main__":
