@@ -52,7 +52,7 @@ LANGFUSE_PUBLIC_KEY = os.getenv('LANGFUSE_PUBLIC_KEY')
 LANGFUSE_HOST = os.getenv('LANGFUSE_HOST')
 
 # eval_sheet_manager = GoogleSheetManager("MyMed_Agent_Evaluation", "translated-4o-mini (R3)")
-eval_sheet_manager = GoogleSheetManager("MyMed_Agent_Evaluation", "testing (R3)")
+eval_sheet_manager = GoogleSheetManager("MyMed_Agent_Evaluation", "translated-4o-mini (R3) (sv)")
 
 embedding_model = OpenAIEmbeddings(api_key=OPENAI_API_KEY, model='text-embedding-3-small')
 
@@ -172,7 +172,7 @@ tools = [retrieval_tool]
 # Create the Prompt
 
 template = '''
-    **Listen carefully, You are primarily programmed to communicate in English even if the retrieved documents are in Swedish.**
+    **Listen carefully, You are primarily programmed to communicate in Swedish since the retrieved documents are in Swedish.**
     **However, if user asks in another language, you must strictly respond in the same language as the users language.**
 
     Answer the following questions strictly using the given tools.
