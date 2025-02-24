@@ -11,6 +11,7 @@ from threading import Thread, Lock
 import json
 import uuid
 import asyncio
+from datetime import datetime, timedelta
 
 import os
 from langchain_core.prompts import PromptTemplate
@@ -86,6 +87,8 @@ langfuse_handler = CallbackHandler(
 
 current_query_id = None
 
+first_turn = True
+
 class QueryContextManager:
     def __init__(self):
         self._contexts = {}
@@ -129,37 +132,70 @@ def retrieve_from_vectorstore(query_text: str):
 with open('/Users/briannoel/Desktop/mymed-combined/data/ranges.json') as f:
     limits_json = json.load(f)
 
-USER_PARAM = {
-    "Weight": 70,
-    "BMI": 20,
-    "Pulse": 60,
-    "Systolic": 150,
-    "Diastolic": 70,
-    "BloodSugarShortTerm": 3,
-    "BloodSugarLongTerm": 35,
-    "Steps": 11000,
-    "Sleep": 26000,
-    "ASAT": 0.5,
-    "ALAT": 0.5,
-    "EnergyLevel": 6.5,
-    "Mood": 6.5,
-    "Stress": 6,
-    "Anxiety": 1,
-    "Depression": 1,
-    "Cholesterol": 3,
-    "RespiratoryRate": 13,
-    "LDLCholesterol": 3,
-    "HDLCholesterol": 1,
-    "THSThyroidStimulatingHormone": 2,
-    "T3Triiodothyronine": 5,
-    "T4Thyroxine": 15,
-    "Estrogen": 80,
-    "Testosterone": 10,
-    "NaSodium": 140,
-    "KPotassium": 4,
-    "Creatinine": 50,
-    "PSAProstateSpecificAntigen": 1,
-    "WaterThrowingBesvVAS": 0.5
+# USER_PARAM = {
+#     "Weight": 70,
+#     "BMI": 20,
+#     "Pulse": 60,
+#     "Systolic": 150,
+#     "Diastolic": 70,
+#     "BloodSugarShortTerm": 3,
+#     "BloodSugarLongTerm": 35,
+#     "Steps": 11000,
+#     "Sleep": 26000,
+#     "ASAT": 0.5,
+#     "ALAT": 0.5,
+#     "EnergyLevel": 6.5,
+#     "Mood": 6.5,
+#     "Stress": 6,
+#     "Anxiety": 1,
+#     "Depression": 1,
+#     "Cholesterol": 3,
+#     "RespiratoryRate": 13,
+#     "LDLCholesterol": 3,
+#     "HDLCholesterol": 1,
+#     "THSThyroidStimulatingHormone": 2,
+#     "T3Triiodothyronine": 5,
+#     "T4Thyroxine": 15,
+#     "Estrogen": 80,
+#     "Testosterone": 10,
+#     "NaSodium": 140,
+#     "KPotassium": 4,
+#     "Creatinine": 50,
+#     "PSAProstateSpecificAntigen": 1,
+#     "WaterThrowingBesvVAS": 0.5
+# }
+
+USER_PARAM_WITH_TIMESTAMP = {
+    "Weight": {"value": 70, "timestamp": "2024-12-01T10:00:00"},
+    "BMI": {"value": 20, "timestamp": "2024-11-25T09:30:00"},
+    "Pulse": {"value": 60, "timestamp": "2021-06-15T08:45:00"},  # ❌ Outdated (> 3 years old)
+    "Systolic": {"value": 150, "timestamp": "2022-05-10T11:20:00"},
+    "Diastolic": {"value": 70, "timestamp": "2020-02-14T14:00:00"},  # ❌ Outdated (> 3 years old)
+    "BloodSugarShortTerm": {"value": 3, "timestamp": "2024-10-05T12:00:00"},
+    "BloodSugarLongTerm": {"value": 35, "timestamp": "2018-07-20T10:00:00"},  # ❌ Outdated (> 3 years old)
+    "Steps": {"value": 11000, "timestamp": "2024-12-23T07:00:00"},
+    "Sleep": {"value": 26000, "timestamp": "2024-12-22T23:00:00"},
+    "ASAT": {"value": 0.5, "timestamp": "2020-01-15T09:00:00"},  # ❌ Outdated (> 3 years old)
+    "ALAT": {"value": 0.5, "timestamp": "2020-01-15T09:00:00"},  # ❌ Outdated (> 3 years old)
+    "EnergyLevel": {"value": 6.5, "timestamp": "2024-11-01T10:30:00"},
+    "Mood": {"value": 6.5, "timestamp": "2024-12-21T08:00:00"},
+    "Stress": {"value": 6, "timestamp": "2024-10-10T15:45:00"},
+    "Anxiety": {"value": 1, "timestamp": "2021-09-20T09:00:00"},  # ❌ Outdated (> 3 years old)
+    "Depression": {"value": 1, "timestamp": "2019-04-01T14:00:00"},  # ❌ Outdated (> 3 years old)
+    "Cholesterol": {"value": 3, "timestamp": "2017-03-12T13:20:00"},  # ❌ Outdated (> 3 years old)
+    "RespiratoryRate": {"value": 13, "timestamp": "2024-11-30T09:30:00"},
+    "LDLCholesterol": {"value": 3, "timestamp": "2023-01-10T10:00:00"},
+    "HDLCholesterol": {"value": 1, "timestamp": "2020-06-22T08:00:00"},  # ❌ Outdated (> 3 years old)
+    "THSThyroidStimulatingHormone": {"value": 2, "timestamp": "2022-12-01T11:00:00"},
+    "T3Triiodothyronine": {"value": 5, "timestamp": "2024-12-01T10:00:00"},
+    "T4Thyroxine": {"value": 15, "timestamp": "2021-02-14T09:00:00"},  # ❌ Outdated (> 3 years old)
+    "Estrogen": {"value": 80, "timestamp": "2015-05-10T08:00:00"},  # ❌ Outdated (> 3 years old)
+    "Testosterone": {"value": 10, "timestamp": "2024-11-10T12:00:00"},
+    "NaSodium": {"value": 140, "timestamp": "2022-08-01T09:00:00"},
+    "KPotassium": {"value": 4, "timestamp": "2024-11-30T10:00:00"},
+    "Creatinine": {"value": 50, "timestamp": "2019-03-01T10:00:00"},  # ❌ Outdated (> 3 years old)
+    "PSAProstateSpecificAntigen": {"value": 1, "timestamp": "2020-11-25T09:00:00"},  # ❌ Outdated (> 3 years old)
+    "WaterThrowingBesvVAS": {"value": 0.5, "timestamp": "2024-12-01T09:30:00"},
 }
 
 # health data and its categories
@@ -185,10 +221,72 @@ def evaluate_health_status(health_values, limits_data):
 
     return evaluated_health, abnormal_params
 
+# 1. Evaluate health data with recency classification
+def evaluate_health_status(health_values, limits_data):
+    evaluated_health = []
+    abnormal_params = []
+    outdated_params = []
+
+    current_time = datetime.now()
+    outdated_threshold = timedelta(days=3 * 365)  # Outdated if older than 3 years
+
+    for param in limits_data:
+        param_name = param["name"]
+        user_data = health_values.get(param_name, None)
+
+        if user_data:
+            user_value = user_data.get("value")
+            timestamp = user_data.get("timestamp")
+
+            if user_value is not None and timestamp:
+                data_age = current_time - datetime.fromisoformat(timestamp)
+
+                # Data freshness evaluation
+                if data_age > outdated_threshold:
+                    recency = "Outdated"
+                    outdated_params.append(param_name)
+                else:
+                    recency = "Recent"
+
+                # Health status evaluation
+                for range_def in param["ranges"]:
+                    if range_def["min"] <= user_value <= range_def["max"]:
+                        evaluated_health.append({
+                            "parameter": param_name,
+                            "value": user_value,
+                            "status": range_def["category"],
+                            "recency": recency
+                        })
+                        if range_def["category"] != "Normal":
+                            abnormal_params.append(param_name)
+                        break
+
+    return evaluated_health, abnormal_params, outdated_params
+
 # Function to evaluate user health data
 def retrieve_health_status(user_health_data):
     evaluated_health_status, _ = evaluate_health_status(user_health_data, limits_json)
     return json.dumps(evaluated_health_status, indent=2)
+
+# 2. Generate Recency Message
+def generate_data_recency_message(outdated_params, abnormal_params):
+    messages = []
+    
+    # Outdated Data Handling (Older than 3 years)
+    if outdated_params:
+        messages.append(
+            f"❌ Outdated data detected (older than 3 years): {', '.join(outdated_params)}.\n"
+            f"If data is available at 1177, follow the instructions to download health data so we can analyze this and improve the output.\n"
+            f"⚠️ Caution and structure ur answer to the user that these health parameter data is more than 3 years old (outdated), but based on this data, the following observations apply..."
+        )
+    
+    # Abnormal Parameter Detection
+    if abnormal_params:
+        messages.append(f"🚩 Abnormal health parameters detected: {', '.join(abnormal_params)}. Please consult a healthcare professional for a follow-up.")
+
+    # No issues
+    return " ".join(messages) if messages else "✅ All your data is up-to-date, and parameters are within normal ranges."
+
 
 retrieval_tool = Tool(
     name="pinecone_retriever",
@@ -205,7 +303,6 @@ template = '''
     **However, if user asks in another language, you must strictly respond in the same language as the users language.**
 
     Answer the following questions strictly using the given tools.
-
     {tools}
 
     Chat history:
@@ -249,24 +346,54 @@ class QueryRequest(BaseModel):
 # API Endpoint for querying the ReAct Agent
 @app.post("/query/")
 async def query_agent(query: QueryRequest):
-    global current_query_id
+    global current_query_id, first_turn
     current_query_id = str(uuid.uuid4())
     try:
 
         final_query = query.question
 
-        user_health_context = retrieve_health_status(USER_PARAM)
+        # user_health_context = retrieve_health_status(USER_PARAM)
 
-        # Combine user health data with the query
-        final_query = f"""
-        User's Health Data:
-        {user_health_context}
+        evaluated_health_status, abnormal_params, outdated_params = evaluate_health_status(USER_PARAM_WITH_TIMESTAMP, limits_json)
+        recency_message = generate_data_recency_message(outdated_params, abnormal_params)
 
-        User's Query:
-        {query.question}
-        """
+        # Add health data context to memory on the first turn
+        if first_turn:
+            evaluated_health_status, abnormal_params, outdated_params = evaluate_health_status(USER_PARAM_WITH_TIMESTAMP, limits_json)
+            recency_message = generate_data_recency_message(outdated_params, abnormal_params)
 
-        print(f"Final Query:\n{final_query}")
+            # Add the initial context to the memory
+            health_context = f"""
+                User's Health Data:
+                {json.dumps(evaluated_health_status, indent=2)}
+
+                Data Recency Status:
+                {recency_message}
+
+                Consider this information for all future responses unless otherwise updated.
+            """
+
+             # Add the system message into the conversation memory
+            memory.chat_memory.add_user_message(health_context)
+
+            # Mark that the initial context has been added
+            first_turn = False
+
+        print(f"User Query:\n{final_query}")
+
+        # # Combine user health data with the query
+        # final_query = f"""
+        # User's Health Data:
+        # {json.dumps(evaluated_health_status, indent=2)}
+
+        # Data Recency Status:
+        # {recency_message}
+
+        # User's Query:
+        # {query.question}
+        # """
+
+        # print(f"Final Query:\n{final_query}")
 
 
         # Pass the input query to the agent executor
