@@ -6,8 +6,7 @@ from streamlit_modal import Modal
 
 # Custom icons for user and assistant
 user_icon = "https://cdn.vectorstock.com/i/1000v/74/41/white-user-icon-vector-42797441.jpg"
-# assistant_icon = "https://cdn.prod.website-files.com/677e635f0494590a26a937e9/677e66b78bd3512252bbc315_Logo.png"
-assistant_icon = "halsa_logo.png"
+assistant_icon = "halsa_logo.png"  # Ensure this file is accessible
 
 GENERAL_QUESTIONS = [
     "Summarize my health data",
@@ -29,19 +28,22 @@ def main():
     display_suggestions()
     display_chat_history()
     handle_user_input()
-    # If feedback has been triggered, show the modal.
-    if st.session_state.feedback_modal_index is not None:
-        show_feedback_modal(st.session_state.feedback_modal_index)
+    if st.session_state.get("feedback_modal_open", False):
+        feedback_dialog()
 
 def initialise_chat():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     if "suggestions_visible" not in st.session_state:
         st.session_state.suggestions_visible = True
-    if "trace_id" not in st.session_state:
-        st.session_state.trace_id = None  # Will be set from /query/ response
-    if "feedback_modal_index" not in st.session_state:
-        st.session_state.feedback_modal_index = None
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+    # Global trace_id is not used for feedback; each assistant message gets its own trace_id.
+    if "feedback_modal_open" not in st.session_state:
+        st.session_state.feedback_modal_open = False
+    if "feedback_trace_id" not in st.session_state:
+        st.session_state.feedback_trace_id = None
+    
 
 def display_suggestions():
     if st.session_state.suggestions_visible:
@@ -53,11 +55,10 @@ def display_suggestions():
 
 def display_suggestion_buttons(questions, key_prefix):
     for i, question in enumerate(questions):
-        button_key = f"{key_prefix}_question_{i}"
-        if st.button(question, key=button_key):
+        if st.button(question, key=f"{key_prefix}_question_{i}"):
             add_user_input(question)
             st.session_state.suggestions_visible = False
-            st.rerun()
+            # No immediate rerun; the assistant response will trigger a rerun
 
 def display_chat_history():
     for i, message in enumerate(st.session_state.chat_history):
@@ -65,61 +66,68 @@ def display_chat_history():
             with st.chat_message("user", avatar=user_icon):
                 st.markdown(message["content"])
         elif message["role"] == "assistant":
+            # Each assistant message includes its own trace_id (set by backend)
+            trace_id = message.get("trace_id")
             with st.chat_message("assistant", avatar=assistant_icon):
                 st.markdown(message["content"])
-                # Display the thumbs widget to capture feedback
-                st.feedback("thumbs", key=f"feedback_{i}", on_change=on_feedback_change, args=[i])
+                # Attach a thumbs widget keyed by the message's trace_id.
+                # When clicked, it will call on_feedback_change with that trace_id.
+                st.feedback("thumbs", key=f"feedback_{trace_id}", on_change=on_feedback_change, args=[trace_id])
 
-def on_feedback_change(index):
+def on_feedback_change(trace_id):
     """
-    When the user clicks the thumbs widget, instead of immediately sending feedback,
-    store the index of the message that needs feedback in session_state and trigger a rerun.
+    When the user clicks the thumbs widget for an assistant message,
+    store that message's trace_id in session_state and open the modal.
     """
-    st.session_state.feedback_modal_index = index
+    st.session_state.feedback_trace_id = trace_id
+    st.session_state.feedback_modal_open = True
     st.rerun()
 
-def show_feedback_modal(index):
-    """
-    Uses streamlit_modal to open a modal dialog for optional comment.
-    The modal collects an optional comment and submits the complete feedback.
-    """
-    # Create a modal instance; each message gets its own key for isolation.
-    modal = Modal(key=f"feedback_modal_{index}", title="Additional Feedback")
-    # Open the modal if it isn't already open.
-    if not modal.is_open():
-        modal.open()
+# Use Streamlit's experimental dialog feature instead of a modal.
+@st.dialog("Additional Feedback")
+def feedback_dialog():
+    comment = st.text_area("Please add your comment (optional):", key="modal_comment")
+    if st.button("Submit Feedback"):
+        submit_feedback_modal(comment)
+        st.session_state.feedback_modal_open = False
+        st.rerun()
 
-    if modal.is_open():
-        comment = st.text_area("Please add your comment (optional):", key=f"modal_comment_{index}")
-        if st.button("Submit Feedback", key=f"submit_feedback_{index}"):
-            submit_feedback_modal(index, comment)
-            # Clear the modal flag and close the modal
-            st.session_state.feedback_modal_index = None
-            modal.close()
-            st.rerun()
+def submit_feedback_modal(comment):
+    """
+    Look up the assistant message that corresponds to the stored feedback_trace_id.
+    Then gather the latest user query before that message and send the feedback payload.
+    """
+    feedback_trace_id = st.session_state.get("feedback_trace_id")
+    if not feedback_trace_id:
+        st.error("No trace ID found for feedback.")
+        return
 
-def submit_feedback_modal(index, comment):
-    """
-    Gather the thumbs value, the optional comment, and other related details,
-    then send the feedback to the backend.
-    """
-    feedback_value = st.session_state.get(f"feedback_{index}")  # 0 or 1
-    assistant_msg = st.session_state.chat_history[index]
-    trace_id = st.session_state.get("trace_id")
-    # Find the preceding user query
+    # Find the assistant message with the matching trace_id.
+    assistant_msg = None
     user_query = ""
-    for j in range(index - 1, -1, -1):
-        if st.session_state.chat_history[j]["role"] == "user":
-            user_query = st.session_state.chat_history[j]["content"]
+    for i, message in enumerate(st.session_state.chat_history):
+        if message["role"] == "assistant" and message.get("trace_id") == feedback_trace_id:
+            assistant_msg = message
+            # Search backwards for the most recent user message
+            for j in range(i - 1, -1, -1):
+                if st.session_state.chat_history[j]["role"] == "user":
+                    user_query = st.session_state.chat_history[j]["content"]
+                    break
             break
 
+    if not assistant_msg:
+        st.error("Could not find the assistant message for feedback.")
+        return
+
+    # Retrieve the thumbs value from the feedback widget.
+    feedback_value = st.session_state.get(f"feedback_{feedback_trace_id}")
     mapped_category = "correct" if feedback_value == 1 else "incorrect"
 
     payload = {
         "query": user_query,
         "response": assistant_msg["content"],
         "feedback_value": mapped_category,
-        "trace_id": trace_id,
+        "trace_id": feedback_trace_id,
         "comment": comment
     }
 
@@ -142,18 +150,30 @@ def add_user_input(user_input):
     with st.chat_message("user", avatar=user_icon):
         st.markdown(user_input)
     generate_assistant_response(user_input)
+    st.rerun()
 
 def generate_assistant_response(user_input):
-    response = requests.post(BACKEND_QUERY_URL, json={"question": user_input})
+    # Call the backend query endpoint; backend returns a new trace_id for each response.
+    response = requests.post(
+        BACKEND_QUERY_URL,
+        json={"question": user_input, "session_id": st.session_state.session_id}
+    )
     if response.status_code == 200:
         response_data = response.json()
-        st.session_state.trace_id = response_data.get("trace_id", "No trace ID generated from backend.")
-        assistant_response = response_data.get("response", "I'm sorry, I couldn't retrieve the information.")
-        if isinstance(assistant_response, dict):
-            assistant_response = assistant_response.get("output", "Sorry, I couldn't process that.")
+        # For each assistant response, use the trace_id returned from the backend.
+        trace_id = response_data.get("trace_id", "No trace ID generated from backend.")
+        assistant_text = response_data.get("response", "I'm sorry, I couldn't retrieve the information.")
+        if isinstance(assistant_text, dict):
+            assistant_text = assistant_text.get("output", "Sorry, I couldn't process that.")
     else:
-        assistant_response = "Error: Unable to get response from the server."
-    st.session_state.chat_history.append({"role": "assistant", "content": assistant_response})
+        trace_id = None
+        assistant_text = "Error: Unable to get response from the server."
+    # Append the assistant message with its associated trace_id.
+    st.session_state.chat_history.append({
+        "role": "assistant",
+        "content": assistant_text,
+        "trace_id": trace_id
+    })
     st.rerun()
 
 if __name__ == "__main__":

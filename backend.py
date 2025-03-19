@@ -5,7 +5,7 @@ import asyncio
 from threading import Lock
 from typing import Dict, List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Cookie, Response
 from pydantic import BaseModel
 
 from dotenv import load_dotenv
@@ -177,6 +177,7 @@ app = FastAPI()
 
 class QueryRequest(BaseModel):
     question: str
+    session_id: str
 
 @app.post("/query/")
 async def query_agent(query: QueryRequest):
@@ -186,6 +187,7 @@ async def query_agent(query: QueryRequest):
     # Create a new trace with your custom ID
     trace_client = langfuse.trace(
         id=current_query_id,
+        session_id = query.session_id,
         metadata={"query": query.question}
     )
 
@@ -206,7 +208,8 @@ async def query_agent(query: QueryRequest):
 
         if not response or "Agent stopped" in response.get("output", ""):
             return {
-                "response": "Sorry, I couldn't retrieve the information. Please try rephrasing your query as I can only provide health-related information."
+                "response": "Sorry, I couldn't retrieve the information. Please try rephrasing your query as I can only provide health-related information.",
+                "trace_id": current_query_id,
             }
 
         # Retrieve context for evaluation
