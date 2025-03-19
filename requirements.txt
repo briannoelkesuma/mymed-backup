@@ -31,7 +31,6 @@ uvicorn
 #frontend
 streamlit
 streamlit_chat
-streamlit_modal
 
 #validation
 pydantic
