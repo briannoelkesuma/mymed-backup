@@ -2,10 +2,12 @@ import os
 import streamlit as st
 import requests
 import uuid
+from streamlit_modal import Modal
 
 # Custom icons for user and assistant
-user_icon = "https://cdn-icons-png.flaticon.com/512/6897/6897018.png"
-assistant_icon = "https://mymedicaldata.se/wp-content/uploads/2022/12/Nylogga-web.png"
+user_icon = "https://cdn.vectorstock.com/i/1000v/74/41/white-user-icon-vector-42797441.jpg"
+# assistant_icon = "https://cdn.prod.website-files.com/677e635f0494590a26a937e9/677e66b78bd3512252bbc315_Logo.png"
+assistant_icon = "halsa_logo.png"
 
 GENERAL_QUESTIONS = [
     "Summarize my health data",
@@ -22,36 +24,34 @@ SPECIFIC_QUESTIONS = [
 BACKEND_QUERY_URL = "http://localhost:9009/query/"
 BACKEND_FEEDBACK_URL = "http://localhost:9009/feedback/"
 
-
 def main():
     initialise_chat()
     display_suggestions()
     display_chat_history()
     handle_user_input()
-
+    # If feedback has been triggered, show the modal.
+    if st.session_state.feedback_modal_index is not None:
+        show_feedback_modal(st.session_state.feedback_modal_index)
 
 def initialise_chat():
-    """Initialize the chat history and suggestions visibility."""
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     if "suggestions_visible" not in st.session_state:
         st.session_state.suggestions_visible = True
     if "trace_id" not in st.session_state:
-        st.session_state.trace_id = None  # Will store the trace ID returned from /query/
-
+        st.session_state.trace_id = None  # Will be set from /query/ response
+    if "feedback_modal_index" not in st.session_state:
+        st.session_state.feedback_modal_index = None
 
 def display_suggestions():
-    """Display suggestions for general and specific questions."""
-    if st.session_state.suggestions_visible and not st.session_state.chat_history:
+    if st.session_state.suggestions_visible:
         st.markdown("### Need some ideas? Try these:")
         st.markdown("###### General Questions")
         display_suggestion_buttons(GENERAL_QUESTIONS, key_prefix="general")
         st.markdown("###### More Specific Questions")
         display_suggestion_buttons(SPECIFIC_QUESTIONS, key_prefix="specific")
 
-
 def display_suggestion_buttons(questions, key_prefix):
-    """Display buttons for suggestions."""
     for i, question in enumerate(questions):
         button_key = f"{key_prefix}_question_{i}"
         if st.button(question, key=button_key):
@@ -59,12 +59,7 @@ def display_suggestion_buttons(questions, key_prefix):
             st.session_state.suggestions_visible = False
             st.rerun()
 
-
 def display_chat_history():
-    """
-    Render chat history with appropriate roles and icons.
-    For every assistant response, also display a feedback widget below it.
-    """
     for i, message in enumerate(st.session_state.chat_history):
         if message["role"] == "user":
             with st.chat_message("user", avatar=user_icon):
@@ -72,20 +67,45 @@ def display_chat_history():
         elif message["role"] == "assistant":
             with st.chat_message("assistant", avatar=assistant_icon):
                 st.markdown(message["content"])
+                # Display the thumbs widget to capture feedback
                 st.feedback("thumbs", key=f"feedback_{i}", on_change=on_feedback_change, args=[i])
-
 
 def on_feedback_change(index):
     """
-    Callback triggered when the thumbs feedback changes for the assistant response at `index`.
-    We look up the preceding user query, then POST to /feedback/ with a 'categorical' value.
+    When the user clicks the thumbs widget, instead of immediately sending feedback,
+    store the index of the message that needs feedback in session_state and trigger a rerun.
+    """
+    st.session_state.feedback_modal_index = index
+    st.rerun()
+
+def show_feedback_modal(index):
+    """
+    Uses streamlit_modal to open a modal dialog for optional comment.
+    The modal collects an optional comment and submits the complete feedback.
+    """
+    # Create a modal instance; each message gets its own key for isolation.
+    modal = Modal(key=f"feedback_modal_{index}", title="Additional Feedback")
+    # Open the modal if it isn't already open.
+    if not modal.is_open():
+        modal.open()
+
+    if modal.is_open():
+        comment = st.text_area("Please add your comment (optional):", key=f"modal_comment_{index}")
+        if st.button("Submit Feedback", key=f"submit_feedback_{index}"):
+            submit_feedback_modal(index, comment)
+            # Clear the modal flag and close the modal
+            st.session_state.feedback_modal_index = None
+            modal.close()
+            st.rerun()
+
+def submit_feedback_modal(index, comment):
+    """
+    Gather the thumbs value, the optional comment, and other related details,
+    then send the feedback to the backend.
     """
     feedback_value = st.session_state.get(f"feedback_{index}")  # 0 or 1
     assistant_msg = st.session_state.chat_history[index]
     trace_id = st.session_state.get("trace_id")
-
-    print("TRACE ID FROM FRONTEND FEEDBACK", trace_id)
-
     # Find the preceding user query
     user_query = ""
     for j in range(index - 1, -1, -1):
@@ -93,20 +113,17 @@ def on_feedback_change(index):
             user_query = st.session_state.chat_history[j]["content"]
             break
 
-    # Convert 0/1 into "incorrect"/"correct" or any category you prefer
     mapped_category = "correct" if feedback_value == 1 else "incorrect"
 
-    # Build the payload for your /feedback/ endpoint
-    # Must match the 'FeedbackRequest' fields in your FastAPI code
     payload = {
         "query": user_query,
         "response": assistant_msg["content"],
         "feedback_value": mapped_category,
-        "trace_id": trace_id
+        "trace_id": trace_id,
+        "comment": comment
     }
 
     try:
-        # Send the feedback to your FastAPI backend
         resp = requests.post(BACKEND_FEEDBACK_URL, json=payload, timeout=10)
         if resp.status_code == 200:
             st.success("Thank you for your feedback!")
@@ -115,24 +132,18 @@ def on_feedback_change(index):
     except Exception as e:
         st.error(f"Could not submit feedback: {e}")
 
-
 def handle_user_input():
-    """Handle manual user input from the chat box."""
     user_input = st.chat_input("Ask me anything about your health based on your data…")
     if user_input:
         add_user_input(user_input)
 
-
 def add_user_input(user_input):
-    """Add user input to chat history and generate a response."""
     st.session_state.chat_history.append({"role": "user", "content": user_input})
     with st.chat_message("user", avatar=user_icon):
         st.markdown(user_input)
     generate_assistant_response(user_input)
 
-
 def generate_assistant_response(user_input):
-    """Generate assistant response by querying the backend."""
     response = requests.post(BACKEND_QUERY_URL, json={"question": user_input})
     if response.status_code == 200:
         response_data = response.json()
@@ -142,14 +153,11 @@ def generate_assistant_response(user_input):
             assistant_response = assistant_response.get("output", "Sorry, I couldn't process that.")
     else:
         assistant_response = "Error: Unable to get response from the server."
-
     st.session_state.chat_history.append({"role": "assistant", "content": assistant_response})
-    # Re-render chat so the new assistant message (and feedback widget) appears
     st.rerun()
 
-
 if __name__ == "__main__":
-    st.set_page_config(page_title="Chat with Hälsa+GPT", page_icon="logo.png", layout="wide")
+    st.set_page_config(page_title="Chat with Hälsa+GPT", page_icon="halsa_logo.png", layout="wide")
     top_bar = """
     <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 20px;">
       <h1 style="margin: 0;">Chat with Hälsa+GPT</h1>

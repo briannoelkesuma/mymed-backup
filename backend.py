@@ -55,14 +55,16 @@ print(f"Connected to Pinecone index '{INDEX_NAME}'.")
 vector_store = PineconeVectorStore(pinecone_index=pinecone_index, text_key="content")
 vector_index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 
-# Initialize callback managers and Langfuse
-callback_manager = CallbackManager([StdOutCallbackHandler()])
+# Initialise Langfuse
 langfuse = Langfuse(secret_key=LANGFUSE_SECRET_KEY, public_key=LANGFUSE_PUBLIC_KEY)
-langfuse_handler = CallbackHandler(
-    public_key=LANGFUSE_PUBLIC_KEY,
-    secret_key=LANGFUSE_SECRET_KEY,
-    host=LANGFUSE_HOST
-)
+
+# # Initialize callback managers
+callback_manager = CallbackManager([StdOutCallbackHandler()])
+# langfuse_handler = CallbackHandler(
+#     public_key=LANGFUSE_PUBLIC_KEY,
+#     secret_key=LANGFUSE_SECRET_KEY,
+#     host=LANGFUSE_HOST
+# )
 
 # ------------------------------------------------------------------------------
 # Helper Classes and Functions
@@ -118,37 +120,40 @@ retrieval_tool = Tool(
 
 tools = [retrieval_tool]  # Add health_status_tool to the list if required
 
-# Define the prompt template for the agent
-template = '''
-**Listen carefully, You are primarily programmed to communicate in English even if the retrieved documents are in Swedish.**
-**However, if user asks in another language, you must strictly respond in the same language as the users language.**
+# # Define the prompt template for the agent
+# template = '''
+# **Listen carefully, You are primarily programmed to communicate in English even if the retrieved documents are in Swedish.**
+# **However, if user asks in another language, you must strictly respond in the same language as the users language.**
 
-Answer the following questions strictly using the given tools.
+# Answer the following questions strictly using the given tools.
 
-{tools}
+# {tools}
 
-Chat history:
-{chat_history}
+# Chat history:
+# {chat_history}
 
-Use the following format:
+# Use the following format:
 
-Question: the input question you must answer
-Thought: reason about the question and decide if it is relevant
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-Thought:
-- Use the **retrieval_tool** tool to retrieve information and context within your knowledge base.
-- If any tool returns a response starting with 'Final Answer:', **stop immediately** and use that as the response.
-    - Do not proceed with further tool usage or reasoning.
+# Question: the input question you must answer
+# Thought: reason about the question and decide if it is relevant
+# Action: the action to take, should be one of [{tool_names}]
+# Action Input: the input to the action
+# Observation: the result of the action
+# Thought:
+# - Use the **retrieval_tool** tool to retrieve information and context within your knowledge base.
+# - If any tool returns a response starting with 'Final Answer:', **stop immediately** and use that as the response.
+#     - Do not proceed with further tool usage or reasoning.
 
-Final Answer: the final answer to the original input question crafted like a storyline with steps if necessary. Include sources and links from the context ONLY.
+# Final Answer: the final answer to the original input question crafted like a storyline with steps if necessary. Include sources and links from the context ONLY.
 
-Begin!
+# Begin!
 
-Question: {input}
-Thought: {agent_scratchpad}
-'''
+# Question: {input}
+# Thought: {agent_scratchpad}
+# '''
+langfuse_prompt = langfuse.get_prompt("ReAct RAG", label="english")
+langfuse_prompt = langfuse.get_prompt("ReAct RAG", label="staging")
+template = langfuse_prompt.prompt
 
 prompt = PromptTemplate.from_template(template)
 
@@ -181,7 +186,6 @@ async def query_agent(query: QueryRequest):
     # Create a new trace with your custom ID
     trace_client = langfuse.trace(
         id=current_query_id,
-        name="query_trace",
         metadata={"query": query.question}
     )
 
@@ -261,6 +265,7 @@ class FeedbackRequest(BaseModel):
     query: str
     response: str
     feedback_value: str
+    comment: str
 
 @app.post("/feedback/")
 def submit_feedback(feedback: FeedbackRequest):
@@ -274,6 +279,7 @@ def submit_feedback(feedback: FeedbackRequest):
             "traceId": feedback.trace_id,
             "name": "user_feedback",
             "value": feedback.feedback_value, # e.g., "correct", "incorrect", etc.
+            "comment": feedback.comment,
             "dataType": "CATEGORICAL",        # important: we use a string value for categories
             "metadata": {
                 "query": feedback.query,
