@@ -1,3 +1,5 @@
+# uvicorn backend:app --reload --port 9009
+
 import os
 import json
 import uuid
