@@ -119,8 +119,3 @@ mymed-backup/
 ```
 
 ---
-
-### Acknowledgements
-
-- Thanks to all contributors and the open-source community for support and inspiration.  
-- Built with ❤️ by Brian Noelkesuma  
