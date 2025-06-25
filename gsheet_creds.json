@@ -1,13 +1,1 @@
-{
-  "type": "service_account",
-  "project_id": "agentic-ai-450010",
-  "private_key_id": "677bc59ab7b30e192e300c2b261873b96157d0cb",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC+WtnBe+I3bQUS\nwzzZLSUqrFAq2pXfkM2ySnlKCuUY/uPGBwBWqUa97jKI+otp19qagj+RXlmn18YY\nPhcfTg1+iU32Re/8A4dTD142RQi2kQatibpU8Rz3bCZQ+09AiaBdg7uVh/fNdpIk\n0ebL3w4K9/g32UWTSlFwuAFdg/arsO1J3mTRsdMIh9Tl5ftY6uc1I33T4TQM3wJc\n/yJGBz7a/907DjhsRBbhOdPb9cH9Dvb3hF7pCExnhdtQ7PHJfcT+RYR4pGs2ORcP\nWoj8rMxgzDRAbbwgWwsBIEw7hF7oxu2yi12hrbFsB/ayWqUIB3MrDATuUEJa0MNZ\nJdELobdfAgMBAAECggEARCto/F+PPeYvAO8mZWhDfSrEcvRg4/WJlKYTFa8dKHxv\nucVcG6z3hqE9O8zuDHOe9+JZPYgad39Qk/H4ed+L+ZrWbrHRJeFlnxtL1AeY/Tim\nuZMvRagrhXgXqLy3PxeKdLLuhLhyyAQEhmcdTjmNX+Q54lZPElZ1H/bllkXiGs3d\nBhaDWnIwPydRzUX3iJr+RUodb635r4daqzORZGcsl9GyLEk9HQpzROa3MF8KByYQ\nrcX2N7KIDzjDtuP89fAJT07SJqQ99htB1c59qIhsnfI7HlxIIv3XDvw9YSdyL6Mo\npWepHmc7/1ht+ihy9wDXYIrR5yh0N62M6LzY1A/i0QKBgQDx7HXIy4sTfO7OeaeN\nR2qkxEE24IWI5aEaOGHc68uYOIAJX3au/2gLmuPXctMISIYWSfEZcy6k5t5lI6Kn\nRxcEMtYIYTluwpRrazo5ICvtzSLL2Az5gcXbHgm9sNQwvwbmpmbAQDQmS6EIC+fz\nizhkKauEPnkjchpfHLm87u36CwKBgQDJbkFC2vZmAGaDQ5raBmQyHsSJB97kqcsz\ncVBHbNtevkRLVtTuVrjUxBQEJKfWMZPlaeXdA3GZWOXocrWDiOnIXyTcefPNw362\nflEu/yUUsiv7N381axlzjGcSgf8uEGLlVkRv8HJtaHl160qxqwPpk9HIlvIGikcK\nfFI7gA/gfQKBgDz2rHvMJyDjE76+U2W7wHkC57gvfhcQXrefy7GDTgvu+PzjrKHO\nxOZfwtixG9Lzi66kNXiHWRK/Bv4Pq9ZhiMBLGzqDXZi2ufYT0FlC7S8Ayar6p9Jc\nTIK6IBRIMkCScue+uRfrVfjsiAjiDzKFO9Gp2on5wEcZYuHi+D9PKnMfAoGBAKVy\nFs5X1MxBBfJI4/ayCzgTh2/Z9ByyzcEqEDsqUSCHfMa4wlolBtlTV/FzPhuzSvvC\nuFeJDZRbrTL4jNhF62d1pmwlCrh2Gyy/oeTNEmLmWTOVCLoShqwepUZRWgw2z1P5\nQGsE/qeYiTLumMJHagY/MK7mNFJk3ybgqBZRADltAoGBAMlqjEdv561QqsT1Qvm7\nx+ss99poa6zGWmrHBfx578VdaDT0VuedWb0HnNEQZM684u6xBSSIeMkdCYv2jEU0\nqra7HsNtVvmp84ov6/8HbNkVBhtbgyHkkggq310RRFCovi9eolwzbR6xU+zROG6w\nsDMNylPG+TY6TLNZCYlR0mvl\n-----END PRIVATE KEY-----\n",
-  "client_email": "mymed-agentic-ai@agentic-ai-450010.iam.gserviceaccount.com",
-  "client_id": "108249043920363560021",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/mymed-agentic-ai%40agentic-ai-450010.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-}
+
