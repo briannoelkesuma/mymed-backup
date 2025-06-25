@@ -16,6 +16,7 @@ It scrapes, processes, evaluates and stores your MyMed data, and provides a Stre
 
 ### Github Branches Use Case
 <img width="277" alt="Screenshot 2025-06-25 at 10 14 08 AM" src="https://github.com/user-attachments/assets/661cc64d-78c6-4f1b-8635-c2d6e6d3a955" />
+
 main: get english answers (without health info)
 user-params: using dynamic health parameters from users
 svenska-checkpoint: get swedish answers (without health info)
