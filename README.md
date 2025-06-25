@@ -1,4 +1,4 @@
-# mymed-backup
+# MyMed (Halsa)
 
 A Python-based backup and data-processing toolkit for MyMed chat function application (currently prototype stays in the web).
 It scrapes, processes, evaluates and stores your MyMed data, and provides a Streamlit frontend for exploration.
